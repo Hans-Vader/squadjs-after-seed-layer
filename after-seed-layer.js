@@ -29,15 +29,26 @@ export default class AfterSeedLayer extends BasePlugin {
       },
       layers: {
         required: false,
-        description: 'Arguments for AdminSetNextLayer per weekday (server time).',
+        description:
+          'Arguments for AdminSetNextLayer per weekday (server time), or a list of them to pick one at random.',
         default: {
           monday: 'Harju_AAS_v2 BAF RGF+support',
           tuesday: 'Chora_RAAS_v1 USA PLA',
           wednesday: 'Narva_RAAS_v1 CAF+support IMF',
           thursday: 'Harju_AAS_v3 RGF PLA',
           friday: 'Mutaha_RAAS_v2 IMF USMC+support',
-          saturday: 'AlBasrah_AAS_v3_CL VDV+support BAF+support',
-          sunday: 'BlackCoast_AAS_v1 AFU ADF'
+          saturday: [
+            'AlBasrah_AAS_v3_CL VDV+support BAF+support',
+            'Gorodok_RAAS_v1 USA RGF',
+            'Fallujah_RAAS_v1 USMC PLA',
+            'Yehorivka_RAAS_v2 AFU CAF'
+          ],
+          sunday: [
+            'BlackCoast_AAS_v1 AFU ADF',
+            'Kokan_RAAS_v1 BAF TLF',
+            'Mestia_RAAS_v1 CAF RGF',
+            'Sanxian_RAAS_v1 USMC PLA'
+          ]
         }
       }
     };
@@ -100,7 +111,8 @@ export default class AfterSeedLayer extends BasePlugin {
         players <= ceiling &&
         this.server.nextLayerToBeVoted === true
       ) {
-        const layer = this.options.layers[WEEKDAYS[new Date().getDay()]];
+        const choices = [].concat(this.options.layers[WEEKDAYS[new Date().getDay()]] ?? []);
+        const layer = choices[Math.floor(Math.random() * choices.length)];
         if (!layer) return;
 
         // The cached vote state can be 30s old, so re-check it right before setting.
