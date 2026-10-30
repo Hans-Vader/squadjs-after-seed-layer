@@ -34,11 +34,11 @@ to the `plugins` array in `config.json`:
   "setThreshold": 50,
   "clearThreshold": 80,
   "layers": {
-    "monday": "Harju_AAS_v2 BAF RGF+support",
-    "tuesday": "Chora_RAAS_v1 USA PLA",
-    "wednesday": "Narva_RAAS_v1 CAF+support IMF",
-    "thursday": "Harju_AAS_v3 RGF PLA",
-    "friday": "Mutaha_RAAS_v2 IMF USMC+support",
+    "monday": ["Harju_AAS_v2 BAF RGF+support"],
+    "tuesday": ["Chora_RAAS_v1 USA PLA"],
+    "wednesday": ["Narva_RAAS_v1 CAF+support IMF"],
+    "thursday": ["Harju_AAS_v3 RGF PLA"],
+    "friday": ["Mutaha_RAAS_v2 IMF USMC+support"],
     "saturday": [
       "AlBasrah_AAS_v3_CL VDV+support BAF+support",
       "Gorodok_RAAS_v1 USA RGF",
@@ -61,7 +61,7 @@ to the `plugins` array in `config.json`:
 |---|---|---|
 | `setThreshold` | `50` | Player count (inclusive) at which the after-seed layer is set. |
 | `clearThreshold` | `80` | Player count above which the plugin clears its own next layer again, so the vote takes over. `0` disables clearing; the layer is then set at any count from `setThreshold` up. |
-| `layers` | *(see above)* | `AdminSetNextLayer` arguments per weekday (`monday` … `sunday`), passed to RCON verbatim. A day can also hold a list; then one entry is picked at random each time the layer is set. A missing day or empty list means no after-seed layer on that day. |
+| `layers` | *(see above)* | List of `AdminSetNextLayer` arguments per weekday (`monday` … `sunday`), passed to RCON verbatim. Each time the layer is set, one entry of today's list is picked at random. A single string instead of a list works too. A missing day or empty list means no after-seed layer on that day. |
 
 ## Notes & limitations
 
