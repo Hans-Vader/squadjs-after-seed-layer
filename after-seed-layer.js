@@ -30,13 +30,13 @@ export default class AfterSeedLayer extends BasePlugin {
       layers: {
         required: false,
         description:
-          'Arguments for AdminSetNextLayer per weekday (server time), or a list of them to pick one at random.',
+          'List of AdminSetNextLayer arguments per weekday (server time); one is picked at random.',
         default: {
-          monday: 'Harju_AAS_v2 BAF RGF+support',
-          tuesday: 'Chora_RAAS_v1 USA PLA',
-          wednesday: 'Narva_RAAS_v1 CAF+support IMF',
-          thursday: 'Harju_AAS_v3 RGF PLA',
-          friday: 'Mutaha_RAAS_v2 IMF USMC+support',
+          monday: ['Harju_AAS_v2 BAF RGF+support'],
+          tuesday: ['Chora_RAAS_v1 USA PLA'],
+          wednesday: ['Narva_RAAS_v1 CAF+support IMF'],
+          thursday: ['Harju_AAS_v3 RGF PLA'],
+          friday: ['Mutaha_RAAS_v2 IMF USMC+support'],
           saturday: [
             'AlBasrah_AAS_v3_CL VDV+support BAF+support',
             'Gorodok_RAAS_v1 USA RGF',
