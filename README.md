@@ -11,7 +11,7 @@ the choice back to the in-game layer vote if the seed round gets too full.
   (queue not included).
 - Once the player count reaches `setThreshold` and no next layer is set yet (next layer is
   "To be voted"), it runs `AdminSetNextLayer <today's layer>`. The weekday is the server's local
-  time.
+  time. If today has a list of layers, one is picked at random.
 - If the player count then rises **above** `clearThreshold` during the same seed round, it runs
   `AdminClearNextLayer`, so the layer vote decides instead. `clearThreshold: 0` turns this off.
 - It never overrides or clears a next layer an admin set: right before setting it re-checks via RCON
@@ -39,8 +39,18 @@ to the `plugins` array in `config.json`:
     "wednesday": "Narva_RAAS_v1 CAF+support IMF",
     "thursday": "Harju_AAS_v3 RGF PLA",
     "friday": "Mutaha_RAAS_v2 IMF USMC+support",
-    "saturday": "AlBasrah_AAS_v3_CL VDV+support BAF+support",
-    "sunday": "BlackCoast_AAS_v1 AFU ADF"
+    "saturday": [
+      "AlBasrah_AAS_v3_CL VDV+support BAF+support",
+      "Gorodok_RAAS_v1 USA RGF",
+      "Fallujah_RAAS_v1 USMC PLA",
+      "Yehorivka_RAAS_v2 AFU CAF"
+    ],
+    "sunday": [
+      "BlackCoast_AAS_v1 AFU ADF",
+      "Kokan_RAAS_v1 BAF TLF",
+      "Mestia_RAAS_v1 CAF RGF",
+      "Sanxian_RAAS_v1 USMC PLA"
+    ]
   }
 }
 ```
@@ -51,7 +61,7 @@ to the `plugins` array in `config.json`:
 |---|---|---|
 | `setThreshold` | `50` | Player count (inclusive) at which the after-seed layer is set. |
 | `clearThreshold` | `80` | Player count above which the plugin clears its own next layer again, so the vote takes over. `0` disables clearing; the layer is then set at any count from `setThreshold` up. |
-| `layers` | *(see above)* | `AdminSetNextLayer` arguments per weekday (`monday` … `sunday`), passed to RCON verbatim. A missing day means no after-seed layer on that day. |
+| `layers` | *(see above)* | `AdminSetNextLayer` arguments per weekday (`monday` … `sunday`), passed to RCON verbatim. A day can also hold a list; then one entry is picked at random each time the layer is set. A missing day or empty list means no after-seed layer on that day. |
 
 ## Notes & limitations
 
