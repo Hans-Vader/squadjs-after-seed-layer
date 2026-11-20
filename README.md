@@ -63,6 +63,22 @@ to the `plugins` array in `config.json`:
 | `clearThreshold` | `80` | Player count above which the plugin clears its own next layer again, so the vote takes over. `0` disables clearing; the layer is then set at any count from `setThreshold` up. |
 | `layers` | *(see above)* | List of `AdminSetNextLayer` arguments per weekday (`monday` … `sunday`), passed to RCON verbatim. Each time the layer is set, one entry of today's list is picked at random. A single string instead of a list works too. A missing day or empty list means no after-seed layer on that day. |
 
+## Logging & debugging
+
+Same scheme as EloTracker and TeamBalancer: messages go through the SquadJS logger.
+
+- **Level 1** (always shown): layer set, cleared, not cleared, errors.
+- **Level 4** (debug): every poll (player count, layer, state, vote pending), missing layer for
+  today, the re-check before setting and the raw RCON answers.
+
+Turn the debug level on in the SquadJS `config.json`:
+
+```json
+"logger": {
+  "verboseness": { "AfterSeedLayer": 4 }
+}
+```
+
 ## Notes & limitations
 
 - Layer strings are not validated. If Squad rejects `AdminSetNextLayer` (typo, unknown faction) or

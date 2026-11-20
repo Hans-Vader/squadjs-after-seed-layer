@@ -69,6 +69,7 @@ export default class AfterSeedLayer extends BasePlugin {
     this.server.on('UPDATED_SERVER_INFORMATION', this.onServerInformation);
     this.server.on('NEW_GAME', this.onNewGame);
     this.server.on('ROUND_ENDED', this.onRoundEnded);
+    this.verbose(4, `Mounted with options ${JSON.stringify(this.options)}`);
   }
 
   async unmount() {
@@ -78,17 +79,25 @@ export default class AfterSeedLayer extends BasePlugin {
   }
 
   onNewGame() {
+    this.verbose(4, `NEW_GAME, state ${this.state} -> idle`);
     this.state = 'idle';
   }
 
   onRoundEnded() {
+    this.verbose(4, `ROUND_ENDED, state ${this.state} -> done`);
     this.state = 'done';
   }
 
   async onServerInformation(info) {
-    if (this.state === 'done' || this.server.currentLayer?.gamemode !== 'Seed') return;
-
     const players = info.playerCount;
+    const current = this.server.currentLayer;
+    this.verbose(
+      4,
+      `${players} players, layer ${current?.layerid} (${current?.gamemode}), state ${this.state}, ` +
+        `next layer to be voted: ${this.server.nextLayerToBeVoted}`
+    );
+    if (this.state === 'done' || current?.gamemode !== 'Seed') return;
+
     const ceiling = this.options.clearThreshold || Infinity;
 
     try {
@@ -96,12 +105,14 @@ export default class AfterSeedLayer extends BasePlugin {
         this.state = 'done';
         // Only undo our own layer: an admin or a vote plugin may have set another one since,
         // possibly the same layer with other factions or units.
-        if ((await this.server.rcon.execute('ShowNextMap')) !== this.ownNextMap) {
-          this.verbose(1, 'Next layer was changed since we set it, not clearing.');
+        const shown = await this.server.rcon.execute('ShowNextMap');
+        if (shown !== this.ownNextMap) {
+          this.verbose(1, `Next layer was changed since we set it, not clearing. ShowNextMap: ${shown}`);
           return;
         }
         this.verbose(1, `${players} players, clearing next layer.`);
-        await this.server.rcon.execute('AdminClearNextLayer');
+        const answer = await this.server.rcon.execute('AdminClearNextLayer');
+        this.verbose(4, `AdminClearNextLayer answer: ${answer}`);
         await this.server.updateLayerInformation();
         if (this.server.nextLayerToBeVoted !== true)
           this.verbose(1, 'Next layer is still set after AdminClearNextLayer.');
@@ -111,9 +122,13 @@ export default class AfterSeedLayer extends BasePlugin {
         players <= ceiling &&
         this.server.nextLayerToBeVoted === true
       ) {
-        const choices = [].concat(this.options.layers[WEEKDAYS[new Date().getDay()]] ?? []);
+        const weekday = WEEKDAYS[new Date().getDay()];
+        const choices = [].concat(this.options.layers[weekday] ?? []);
         const layer = choices[Math.floor(Math.random() * choices.length)];
-        if (!layer) return;
+        if (!layer) {
+          this.verbose(4, `No layer configured for ${weekday}.`);
+          return;
+        }
 
         // The cached vote state can be 30s old, so re-check it right before setting.
         // 'setting' also blocks overlapping events; a failed set stays there until NEW_GAME.
@@ -121,13 +136,15 @@ export default class AfterSeedLayer extends BasePlugin {
         const next = await this.server.rcon
           .getNextMap()
           .catch((err) => this.verbose(1, 'Failed to read next layer.', err));
+        this.verbose(4, `Re-check before setting ${layer}: ${JSON.stringify(next)}`);
         // ROUND_ENDED or NEW_GAME may have fired while waiting for RCON.
         if (this.state !== 'setting') return;
         if (!next?.toBeVoted) {
           this.state = 'idle';
           return;
         }
-        await this.server.rcon.execute(`AdminSetNextLayer ${layer}`);
+        const answer = await this.server.rcon.execute(`AdminSetNextLayer ${layer}`);
+        this.verbose(4, `AdminSetNextLayer answer: ${answer}`);
         // Squad's own answer covers layer and factions, however the config spells them.
         this.ownNextMap = await this.server.rcon.execute('ShowNextMap');
         this.verbose(1, `${players} players, set next layer ${layer}, ShowNextMap: ${this.ownNextMap}`);

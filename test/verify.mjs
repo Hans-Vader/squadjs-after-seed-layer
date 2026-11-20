@@ -94,7 +94,7 @@ async function makePlugin(serverOpts, opts = {}) {
   const server = new MockServer(serverOpts);
   const plugin = new AfterSeedLayer(server, { setThreshold: 50, clearThreshold: 80, layers: LAYERS, ...opts });
   const logs = [];
-  plugin.verbose = (level, ...msg) => logs.push(msg);
+  plugin.verbose = (level, ...msg) => logs.push({ level, text: msg.join(' ') });
   await plugin.mount();
   return { server, plugin, logs };
 }
@@ -150,7 +150,8 @@ async function makePlugin(serverOpts, opts = {}) {
   const ignored = await makePlugin();
   ignored.server.ignoreClear = true;
   await players(ignored.server, 50); await players(ignored.server, 81);
-  ok(ignored.logs.length === cleared.logs.length + 1, 'S6 one extra log line when the next layer is still set after clearing');
+  const important = (logs) => logs.filter((l) => l.level === 1).length;
+  ok(important(ignored.logs) === important(cleared.logs) + 1, 'S6 one extra log line when the next layer is still set after clearing');
 }
 
 // === Scenario 7: never sets when the seed is already past clearThreshold ========
@@ -200,6 +201,15 @@ async function makePlugin(serverOpts, opts = {}) {
   await players(server, 90); ok(server.commands.join() === SET_WED, 'S12 sets when jumping straight to 90');
   await players(server, 100); ok(server.commands.length === 1, 'S12 never clears');
 }
+
+// === Scenario 13: debug detail at verbose 4, decisions at verbose 1 =============
+{
+  const { server, logs } = await makePlugin();
+  await players(server, 50);
+  ok(logs.some((l) => l.level === 4 && l.text.startsWith('50 players, layer Mutaha_Seed_v1')), 'S13 poll state at verbose 4');
+  ok(logs.some((l) => l.level === 1 && l.text.includes('set next layer Wed_RAAS_v1 BAF PLA')), 'S13 set message at verbose 1');
+}
+
 // --- summary --------------------------------------------------------------------
 Date.prototype.getDay = realGetDay;
 fs.rmSync(tmp, { recursive: true, force: true });
