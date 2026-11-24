@@ -9,13 +9,13 @@ the choice back to the in-game layer vote if the seed round gets too full.
 - Only acts while the current layer is a **Seed** layer (`gamemode` `Seed`).
 - Evaluates on every `UPDATED_SERVER_INFORMATION` event (~30s) using the server's player count
   (queue not included).
-- Once the player count reaches `setThreshold` and no next layer is set yet (next layer is
-  "To be voted"), it runs `AdminSetNextLayer <today's layer>`. The weekday is the server's local
+- Once the player count reaches `setThreshold` and no next layer is set yet (`ShowNextMap`
+  answers "Next map is not defined" or "To be voted"), it runs `AdminSetNextLayer <today's layer>`. The weekday is the server's local
   time. If today has a list of layers, one is picked at random.
 - If the player count then rises **above** `clearThreshold` during the same seed round, it runs
   `AdminClearNextLayer`, so the layer vote decides instead. `clearThreshold: 0` turns this off.
-- It never overrides or clears a next layer an admin set: right before setting it re-checks via RCON
-  that the vote is still pending, and before clearing that `ShowNextMap` still returns what it did
+- It never overrides or clears a next layer an admin set: right before setting it asks `ShowNextMap`
+  that no next layer is set, and before clearing that `ShowNextMap` still returns what it did
   right after the plugin set its layer. The same layer with other factions counts as foreign, an
   identical one does not (see notes).
 - At most one set and one clear per round. `ROUND_ENDED` freezes the state (the set layer is about

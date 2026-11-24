@@ -2,6 +2,10 @@ import BasePlugin from './base-plugin.js';
 
 const WEEKDAYS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
 
+// ShowNextMap answers while no next layer is set: "Next map is not defined" (e.g. on a seed
+// layer) or "..., layer is To be voted". SquadJS' nextLayerToBeVoted only knows the latter.
+const NO_NEXT_LAYER = /not defined|To be voted/;
+
 export default class AfterSeedLayer extends BasePlugin {
   static get description() {
     return (
@@ -113,14 +117,14 @@ export default class AfterSeedLayer extends BasePlugin {
         this.verbose(1, `${players} players, clearing next layer.`);
         const answer = await this.server.rcon.execute('AdminClearNextLayer');
         this.verbose(4, `AdminClearNextLayer answer: ${answer}`);
+        const after = await this.server.rcon.execute('ShowNextMap');
+        if (!NO_NEXT_LAYER.test(after))
+          this.verbose(1, `Next layer is still set after AdminClearNextLayer. ShowNextMap: ${after}`);
         await this.server.updateLayerInformation();
-        if (this.server.nextLayerToBeVoted !== true)
-          this.verbose(1, 'Next layer is still set after AdminClearNextLayer.');
       } else if (
         this.state === 'idle' &&
         players >= this.options.setThreshold &&
-        players <= ceiling &&
-        this.server.nextLayerToBeVoted === true
+        players <= ceiling
       ) {
         const weekday = WEEKDAYS[new Date().getDay()];
         const choices = [].concat(this.options.layers[weekday] ?? []);
@@ -130,16 +134,16 @@ export default class AfterSeedLayer extends BasePlugin {
           return;
         }
 
-        // The cached vote state can be 30s old, so re-check it right before setting.
+        // Only set while Squad has no next layer, so an admin's or a vote's choice stays.
         // 'setting' also blocks overlapping events; a failed set stays there until NEW_GAME.
         this.state = 'setting';
-        const next = await this.server.rcon
-          .getNextMap()
+        const shown = await this.server.rcon
+          .execute('ShowNextMap')
           .catch((err) => this.verbose(1, 'Failed to read next layer.', err));
-        this.verbose(4, `Re-check before setting ${layer}: ${JSON.stringify(next)}`);
+        this.verbose(4, `ShowNextMap before setting ${layer}: ${shown}`);
         // ROUND_ENDED or NEW_GAME may have fired while waiting for RCON.
         if (this.state !== 'setting') return;
-        if (!next?.toBeVoted) {
+        if (!NO_NEXT_LAYER.test(shown)) {
           this.state = 'idle';
           return;
         }

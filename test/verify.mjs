@@ -54,28 +54,25 @@ const SET_WED = 'AdminSetNextLayer Wed_RAAS_v1 BAF PLA';
 const SEED = { name: 'Mutaha Seed v1', classname: 'Mutaha', layerid: 'Mutaha_Seed_v1', gamemode: 'Seed' };
 const RAAS = { name: 'Mutaha RAAS v2', classname: 'Mutaha', layerid: 'Mutaha_RAAS_v2', gamemode: 'RAAS' };
 
-// Like the real SquadServer, `nextLayerToBeVoted` only reflects Squad's next layer
-// after updateLayerInformation() (or the next 30s layer poll).
+// Like the real SquadServer, `nextLayerToBeVoted` stays false while Squad answers
+// "Next map is not defined"; the plugin must not depend on it.
 class MockServer extends EventEmitter {
   constructor({ currentLayer = SEED, squadNextLayer = null } = {}) {
     super(); this.currentLayer = currentLayer; this.squadNextLayer = squadNextLayer;
-    this.nextLayerToBeVoted = squadNextLayer === null;
+    this.nextLayerToBeVoted = false;
     this.commands = []; this.ignoreClear = false; this.failRcon = false; const self = this;
     this.rcon = { execute: async (cmd) => {
       if (self.failRcon) throw new Error('Not connected.');
       if (cmd === 'ShowNextMap') return self.squadNextLayer
         ? `Next level is X, layer is ${self.squadNextLayer.replace(' ', ', factions ')}`
-        : 'Next level is , layer is To be voted';
+        : 'Next map is not defined';
       self.commands.push(cmd);
       if (cmd.startsWith('AdminSetNextLayer ')) self.squadNextLayer = cmd.slice('AdminSetNextLayer '.length);
       if (cmd === 'AdminClearNextLayer' && !self.ignoreClear) self.squadNextLayer = null;
       return '';
-    }, getNextMap: async () => {
-      if (self.failRcon) throw new Error('Not connected.');
-      return { layer: self.squadNextLayer?.split(' ')[0] ?? null, toBeVoted: self.squadNextLayer === null };
     } };
   }
-  async updateLayerInformation() { this.nextLayerToBeVoted = this.squadNextLayer === null; }
+  async updateLayerInformation() {}
 }
 
 // UPDATED_SERVER_INFORMATION payload as built by SquadServer.updateServerInformation().
@@ -166,7 +163,7 @@ async function makePlugin(serverOpts, opts = {}) {
   await players(server, 55);
   await fire(server, 'ROUND_ENDED', { winner: null, loser: null, time: new Date() });
   await players(server, 90); ok(server.commands.length === 1, 'S8 no clear after ROUND_ENDED (the set layer is about to load)');
-  server.squadNextLayer = null; server.nextLayerToBeVoted = true; // next seed round starts with a vote pending
+  server.squadNextLayer = null; // next seed round starts without a next layer
   await fire(server, 'NEW_GAME', { dlc: null, mapClassname: 'Mutaha', layerClassname: 'Mutaha_Seed_v1', layer: SEED, time: new Date() });
   await players(server, 55); ok(server.commands[1] === SET_WED, 'S8 sets again after NEW_GAME');
 }
